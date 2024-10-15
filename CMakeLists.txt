@@ -5,6 +5,7 @@ set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 project(ImageRefinery)
 
 
+find_package(ftxui CONFIG REQUIRED)
 find_package(OpenImageIO CONFIG REQUIRED)
 
 
