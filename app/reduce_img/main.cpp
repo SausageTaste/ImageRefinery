@@ -20,6 +20,8 @@ namespace {
         Widget() : screen_(ftxui::ScreenInteractive::TerminalOutput()) {
             input_path_ui_ = ftxui::Input(&input_path_data_, "Image path");
 
+            checkbox_ui_ = ftxui::Checkbox("Check me", &checkbox_data_);
+
             btn_label_ = "Start";
             btn_ui_ = ftxui::Button(btn_label_, [this]() {
                 if (btn_on_click_)
@@ -34,6 +36,7 @@ namespace {
 
             components_ = ftxui::Container::Vertical({
                 input_path_ui_,
+                checkbox_ui_,
                 btn_ui_,
                 btn_clear_ui_,
             });
@@ -62,6 +65,8 @@ namespace {
             elements.push_back(
                 ftxui::hbox(ftxui::text(" Path : "), input_path_ui_->Render())
             );
+            elements.push_back(ftxui::separator());
+            elements.push_back(checkbox_ui_->Render());
             elements.push_back(ftxui::hbox(
                 btn_ui_->Render() | ftxui::xflex,
                 btn_clear_ui_->Render() | ftxui::xflex
@@ -74,6 +79,9 @@ namespace {
 
         std::string input_path_data_;
         ftxui::Component input_path_ui_;
+
+        bool checkbox_data_ = false;
+        ftxui::Component checkbox_ui_;
 
         std::string btn_label_;
         btn_click_callback_t btn_on_click_;
