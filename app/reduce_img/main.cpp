@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <set>
 #include <vector>
 
 #include <OpenImageIO/imagebuf.h>
@@ -11,6 +12,9 @@
 
 
 namespace {
+
+    namespace fs = std::filesystem;
+
 
     class Widget {
 
@@ -106,7 +110,7 @@ namespace {
         return str;
     }
 
-    std::string do_work(const std::filesystem::path& path) {
+    std::string do_work(const fs::path& path) {
         OIIO::ImageBuf img(path.string());
         const auto ok = img.read();
         if (!ok)
@@ -148,7 +152,7 @@ int main() {
 
     widget.set_callback_on_btn_click([](Widget& widget) {
         const auto path_str = ::strip_quotes(widget.get_input_path());
-        const auto path = std::filesystem::u8path(path_str);
+        const auto path = fs::u8path(path_str);
         const auto result = ::do_work(path);
         widget.set_output_text(result);
     });
