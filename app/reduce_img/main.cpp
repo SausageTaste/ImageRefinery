@@ -135,20 +135,24 @@ namespace {
         if (resized.has_error())
             return resized.geterror();
 
-        // add suffix to the file name, before extension
-        const auto resized_path =
-            (path.parent_path() /
-             (path.stem().string() + "_resized" + path.extension().string()));
-        resized.write(resized_path.string());
+        const auto new_name_ext = fmt::format(
+            "{}_resized.png", path.stem().string()
+        );
+        const auto out_path = path.parent_path() / new_name_ext;
 
-        const auto median_filtered = OIIO::ImageBufAlgo::median_filter(resized);
-        if (median_filtered.has_error())
-            return median_filtered.geterror();
+        OIIO::ImageSpec spec{
+            roi.width(), roi.height(), nc, OIIO::TypeDesc::UINT8
+        };
+        spec["png:compressionLevel"] = 9;
 
-        const auto median_filtered_path =
-            (path.parent_path() / (path.stem().string() + "_median_filtered" +
-                                   path.extension().string()));
-        median_filtered.write(median_filtered_path.string());
+        auto out = OIIO::ImageOutput::create(out_path.string());
+        out->open(out_path.string(), spec);
+
+        resized.write(
+            out.get(),
+            [](void* opaque_data, float portion_done) { return false; },
+            nullptr
+        );
 
         return "success";
     }
@@ -263,6 +267,15 @@ int main() {
     widget.btn_clear_.on_click_ = [&]() {
         file_list.clear();
         widget.set_output_text(file_list.make_text());
+    };
+
+    widget.btn_start_.on_click_ = [&]() {
+        for (const auto& path : file_list.get_files()) {
+            const auto result = ::do_work(path);
+            break;
+        }
+
+        widget.set_output_text("All files processed successfully");
     };
 
     widget.start();
