@@ -22,6 +22,21 @@ namespace {
     }
 
 
+    class Button {
+
+    public:
+        void init(const std::string& label) {
+            ui_ = ftxui::Button(label, [this]() {
+                if (on_click_)
+                    on_click_();
+            });
+        }
+
+        ftxui::Component ui_;
+        std::function<void()> on_click_;
+    };
+
+
     class Widget {
 
     public:
@@ -34,23 +49,16 @@ namespace {
                 "Recursive", &checkbox_recur_data_
             );
 
-            btn_add_label_ = "Add";
-            btn_add_ui_ = ftxui::Button(btn_add_label_, [this]() {
-                if (btn_add_on_click_)
-                    btn_add_on_click_();
-            });
-
-            btn_clear_label_ = "Clear";
-            btn_clear_ui_ = ftxui::Button(btn_clear_label_, [this]() {
-                if (btn_clear_on_click_)
-                    btn_clear_on_click_();
-            });
+            btn_add_.init("Add");
+            btn_clear_.init("Clear");
+            btn_start_.init("Start");
 
             components_ = ftxui::Container::Vertical({
                 input_path_ui_,
                 checkbox_recur_ui_,
-                btn_add_ui_,
-                btn_clear_ui_,
+                btn_add_.ui_,
+                btn_clear_.ui_,
+                btn_start_.ui_,
             });
 
             renderer_ = ftxui::Renderer(components_, [&] {
@@ -66,8 +74,9 @@ namespace {
 
         void set_output_text(const std::string& text) { output_text_ = text; }
 
-        btn_click_callback_t btn_add_on_click_;
-        btn_click_callback_t btn_clear_on_click_;
+        Button btn_add_;
+        Button btn_clear_;
+        Button btn_start_;
 
     private:
         ftxui::Element render_function() {
@@ -78,11 +87,12 @@ namespace {
             elements.push_back(ftxui::separator());
             elements.push_back(checkbox_recur_ui_->Render());
             elements.push_back(ftxui::hbox(
-                btn_add_ui_->Render() | ftxui::xflex,
-                btn_clear_ui_->Render() | ftxui::xflex
+                btn_add_.ui_->Render() | ftxui::xflex,
+                btn_clear_.ui_->Render() | ftxui::xflex
             ));
-            elements.push_back(ftxui::separator());
             elements.push_back(ftxui::text(output_text_));
+            elements.push_back(ftxui::separator());
+            elements.push_back(btn_start_.ui_->Render());
 
             return ftxui::vbox(elements) | ftxui::border;
         }
@@ -92,12 +102,6 @@ namespace {
 
         bool checkbox_recur_data_ = false;
         ftxui::Component checkbox_recur_ui_;
-
-        std::string btn_add_label_;
-        ftxui::Component btn_add_ui_;
-
-        std::string btn_clear_label_;
-        ftxui::Component btn_clear_ui_;
 
         std::string output_text_;
 
@@ -233,6 +237,8 @@ int main() {
     ::Widget widget;
     ::FileList file_list;
 
+    widget.set_output_text(file_list.make_text());
+
     file_list.file_filter_ = [](fs::path path) {
         static const std::set<std::string> allowed_exts = {
             ".png",
@@ -247,21 +253,18 @@ int main() {
         return false;
     };
 
-    widget.btn_add_on_click_ = [&]() {
+    widget.btn_add_.on_click_ = [&]() {
         const auto path_str = ::strip_quotes(widget.get_input_path());
         const auto path = fs::u8path(path_str);
         file_list.add(path, widget.get_checkbox_recur());
         widget.set_output_text(file_list.make_text());
     };
 
-    widget.btn_clear_on_click_ = [&]() {
+    widget.btn_clear_.on_click_ = [&]() {
         file_list.clear();
         widget.set_output_text(file_list.make_text());
     };
 
     widget.start();
-    return 0;
-
-
     return 0;
 }
