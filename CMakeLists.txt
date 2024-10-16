@@ -9,4 +9,5 @@ find_package(ftxui CONFIG REQUIRED)
 find_package(OpenImageIO CONFIG REQUIRED)
 
 
+add_subdirectory(lib)
 add_subdirectory(app)

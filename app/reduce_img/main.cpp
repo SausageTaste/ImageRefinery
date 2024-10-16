@@ -1,5 +1,3 @@
-#include <filesystem>
-#include <set>
 #include <vector>
 
 #include <OpenImageIO/imagebuf.h>
@@ -9,6 +7,8 @@
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
+
+#include "sung/imgref/filesys.hpp"
 
 
 namespace {
@@ -157,89 +157,12 @@ namespace {
         return "success";
     }
 
-
-    class FileList {
-
-    public:
-        FileList()
-            : file_filter_([&](fs::path path) { return true; })
-            , folder_filter_([&](fs::path path) { return true; }) {}
-
-        void clear() { files_.clear(); }
-
-        void add(const fs::path& path, bool recursive) {
-            if (fs::is_directory(path)) {
-                if (recursive) {
-                    this->add_dir_recur(path);
-                } else {
-                    this->add_dir(path);
-                }
-            } else if (this->is_valid_file(path)) {
-                files_.insert(path);
-            }
-        }
-
-        const std::set<fs::path>& get_files() const { return files_; }
-
-        std::string make_text() const {
-            return fmt::format(
-                "{} files in {} locations",
-                this->get_files().size(),
-                this->make_locations().size()
-            );
-        }
-
-        std::set<fs::path> make_locations() const {
-            std::set<fs::path> out;
-            for (const auto& x : files_) out.insert(x.parent_path());
-            return out;
-        }
-
-        std::function<bool(fs::path)> file_filter_;
-        std::function<bool(fs::path)> folder_filter_;
-
-    private:
-        bool is_valid_file(const fs::directory_entry& entry) const {
-            return entry.is_regular_file() && file_filter_(entry.path());
-        }
-
-        bool is_valid_file(const fs::path& path) const {
-            return fs::is_regular_file(path) && file_filter_(path);
-        }
-
-        void add_dir(const fs::path& path) {
-            if (!folder_filter_(path))
-                return;
-
-            for (const auto& e : fs::directory_iterator(path)) {
-                if (this->is_valid_file(e)) {
-                    files_.insert(e.path());
-                }
-            }
-        }
-
-        void add_dir_recur(const fs::path& path) {
-            if (!folder_filter_(path))
-                return;
-
-            for (const auto& e : fs::directory_iterator(path)) {
-                if (e.is_directory()) {
-                    this->add_dir_recur(e.path());
-                } else if (this->is_valid_file(e)) {
-                    files_.insert(e.path());
-                }
-            }
-        }
-
-        std::set<fs::path> files_;
-    };
-
 }  // namespace
 
 
 int main() {
     ::Widget widget;
-    ::FileList file_list;
+    sung::FileList file_list;
 
     widget.set_output_text(file_list.make_text());
 

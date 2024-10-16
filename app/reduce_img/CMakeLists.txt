@@ -5,6 +5,5 @@ target_link_libraries(reduce_img PRIVATE
     ftxui::dom
     ftxui::screen
     ftxui::component
-    OpenImageIO::OpenImageIO
+    sung::libimgref
 )
-target_compile_features(reduce_img PRIVATE cxx_std_20)
