@@ -16,32 +16,40 @@ namespace {
     namespace fs = std::filesystem;
 
 
+    std::string make_str_lower(std::string str) {
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        return str;
+    }
+
+
     class Widget {
 
     public:
-        using btn_click_callback_t = std::function<void(Widget&)>;
+        using btn_click_callback_t = std::function<void()>;
 
         Widget() : screen_(ftxui::ScreenInteractive::TerminalOutput()) {
             input_path_ui_ = ftxui::Input(&input_path_data_, "Image path");
 
-            checkbox_ui_ = ftxui::Checkbox("Check me", &checkbox_data_);
+            checkbox_recur_ui_ = ftxui::Checkbox(
+                "Recursive", &checkbox_recur_data_
+            );
 
-            btn_label_ = "Start";
-            btn_ui_ = ftxui::Button(btn_label_, [this]() {
-                if (btn_on_click_)
-                    btn_on_click_(*this);
+            btn_add_label_ = "Add";
+            btn_add_ui_ = ftxui::Button(btn_add_label_, [this]() {
+                if (btn_add_on_click_)
+                    btn_add_on_click_();
             });
 
             btn_clear_label_ = "Clear";
             btn_clear_ui_ = ftxui::Button(btn_clear_label_, [this]() {
-                this->input_path_data_.clear();
-                this->output_text_.clear();
+                if (btn_clear_on_click_)
+                    btn_clear_on_click_();
             });
 
             components_ = ftxui::Container::Vertical({
                 input_path_ui_,
-                checkbox_ui_,
-                btn_ui_,
+                checkbox_recur_ui_,
+                btn_add_ui_,
                 btn_clear_ui_,
             });
 
@@ -53,15 +61,13 @@ namespace {
         void start() { screen_.Loop(renderer_); }
 
         const std::string& get_input_path() const { return input_path_data_; }
-        void set_input_path(const std::string& path) {
-            input_path_data_ = path;
-        }
+
+        bool get_checkbox_recur() const { return checkbox_recur_data_; }
 
         void set_output_text(const std::string& text) { output_text_ = text; }
 
-        void set_callback_on_btn_click(btn_click_callback_t on_click) {
-            btn_on_click_ = on_click;
-        }
+        btn_click_callback_t btn_add_on_click_;
+        btn_click_callback_t btn_clear_on_click_;
 
     private:
         ftxui::Element render_function() {
@@ -70,9 +76,9 @@ namespace {
                 ftxui::hbox(ftxui::text(" Path : "), input_path_ui_->Render())
             );
             elements.push_back(ftxui::separator());
-            elements.push_back(checkbox_ui_->Render());
+            elements.push_back(checkbox_recur_ui_->Render());
             elements.push_back(ftxui::hbox(
-                btn_ui_->Render() | ftxui::xflex,
+                btn_add_ui_->Render() | ftxui::xflex,
                 btn_clear_ui_->Render() | ftxui::xflex
             ));
             elements.push_back(ftxui::separator());
@@ -84,12 +90,11 @@ namespace {
         std::string input_path_data_;
         ftxui::Component input_path_ui_;
 
-        bool checkbox_data_ = false;
-        ftxui::Component checkbox_ui_;
+        bool checkbox_recur_data_ = false;
+        ftxui::Component checkbox_recur_ui_;
 
-        std::string btn_label_;
-        btn_click_callback_t btn_on_click_;
-        ftxui::Component btn_ui_;
+        std::string btn_add_label_;
+        ftxui::Component btn_add_ui_;
 
         std::string btn_clear_label_;
         ftxui::Component btn_clear_ui_;
@@ -144,18 +149,115 @@ namespace {
         return "success";
     }
 
+
+    class FileList {
+
+    public:
+        FileList()
+            : file_filter_([&](fs::path path) { return true; })
+            , folder_filter_([&](fs::path path) { return true; }) {}
+
+        void clear() { files_.clear(); }
+
+        void add(const fs::path& path, bool recursive) {
+            if (fs::is_directory(path)) {
+                if (recursive) {
+                    this->add_dir_recur(path);
+                } else {
+                    this->add_dir(path);
+                }
+            } else if (this->is_valid_file(path)) {
+                files_.insert(path);
+            }
+        }
+
+        const std::set<fs::path>& get_files() const { return files_; }
+
+        std::string make_text() const {
+            return fmt::format(
+                "{} files in {} locations",
+                this->get_files().size(),
+                this->make_locations().size()
+            );
+        }
+
+        std::set<fs::path> make_locations() const {
+            std::set<fs::path> out;
+            for (const auto& x : files_) out.insert(x.parent_path());
+            return out;
+        }
+
+        std::function<bool(fs::path)> file_filter_;
+        std::function<bool(fs::path)> folder_filter_;
+
+    private:
+        bool is_valid_file(const fs::directory_entry& entry) const {
+            return entry.is_regular_file() && file_filter_(entry.path());
+        }
+
+        bool is_valid_file(const fs::path& path) const {
+            return fs::is_regular_file(path) && file_filter_(path);
+        }
+
+        void add_dir(const fs::path& path) {
+            if (!folder_filter_(path))
+                return;
+
+            for (const auto& e : fs::directory_iterator(path)) {
+                if (this->is_valid_file(e)) {
+                    files_.insert(e.path());
+                }
+            }
+        }
+
+        void add_dir_recur(const fs::path& path) {
+            if (!folder_filter_(path))
+                return;
+
+            for (const auto& e : fs::directory_iterator(path)) {
+                if (e.is_directory()) {
+                    this->add_dir_recur(e.path());
+                } else if (this->is_valid_file(e)) {
+                    files_.insert(e.path());
+                }
+            }
+        }
+
+        std::set<fs::path> files_;
+    };
+
 }  // namespace
 
 
 int main() {
-    Widget widget;
+    ::Widget widget;
+    ::FileList file_list;
 
-    widget.set_callback_on_btn_click([](Widget& widget) {
+    file_list.file_filter_ = [](fs::path path) {
+        static const std::set<std::string> allowed_exts = {
+            ".png",
+            ".jpg",
+            ".jpeg",
+        };
+
+        const auto ext = ::make_str_lower(path.extension().string());
+        if (allowed_exts.find(ext) != allowed_exts.end())
+            return true;
+
+        return false;
+    };
+
+    widget.btn_add_on_click_ = [&]() {
         const auto path_str = ::strip_quotes(widget.get_input_path());
         const auto path = fs::u8path(path_str);
-        const auto result = ::do_work(path);
-        widget.set_output_text(result);
-    });
+        file_list.add(path, widget.get_checkbox_recur());
+        widget.set_output_text(file_list.make_text());
+    };
+
+    widget.btn_clear_on_click_ = [&]() {
+        file_list.clear();
+        widget.set_output_text(file_list.make_text());
+    };
 
     widget.start();
     return 0;
