@@ -1,1 +1,1 @@
-add_subdirectory(reduce_img)
+add_subdirectory(reduce_img_tui)
