@@ -3,6 +3,13 @@
 #include <OpenImageIO/filesystem.h>
 
 
+namespace {
+
+    int round_int(const double x) { return static_cast<int>(std::round(x)); }
+
+}  // namespace
+
+
 // ImageSize2D
 namespace sung {
 
@@ -23,14 +30,30 @@ namespace sung {
         factors_.insert(ratio);
     }
 
+    void ImageSize2D::resize_for_jpeg() {
+        constexpr double MAX_LEN = 65535;
+        this->resize_to_fit_into(MAX_LEN, MAX_LEN);
+    }
+
+    void ImageSize2D::resize_for_webp() {
+        constexpr double MAX_LEN = 16383;
+        this->resize_to_fit_into(MAX_LEN, MAX_LEN);
+    }
+
     int ImageSize2D::width() const {
         const auto factor = *factors_.begin();
-        return std::round(width_ * factor);
+        if (factor < 1)
+            return ::round_int(width_ * factor);
+        else
+            return ::round_int(width_);
     }
 
     int ImageSize2D::height() const {
         const auto factor = *factors_.begin();
-        return std::round(height_ * factor);
+        if (factor < 1)
+            return ::round_int(height_ * factor);
+        else
+            return ::round_int(height_);
     }
 
 }  // namespace sung

@@ -30,6 +30,8 @@ namespace {
         const auto npixels = img.spec().image_pixels();
 
         sung::ImageSize2D img_dim(width, height);
+        img_dim.resize_for_jpeg();
+        img_dim.resize_for_webp();
         img_dim.resize_to_enclose(500, 500);
         const OIIO::ROI roi(
             0, img_dim.width(), 0, img_dim.height(), 0, 1, 0, img.nchannels()

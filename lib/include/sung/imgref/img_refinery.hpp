@@ -17,6 +17,9 @@ namespace sung {
         void resize_to_fit_into(double frame_w, double frame_h);
         void resize_to_enclose(double frame_w, double frame_h);
 
+        void resize_for_jpeg();
+        void resize_for_webp();
+
         int width() const;
         int height() const;
 
