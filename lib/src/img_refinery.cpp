@@ -13,7 +13,7 @@ namespace {
 // ImageSize2D
 namespace sung {
 
-    ImageSize2D::ImageSize2D(double width, double height)
+    ImageSize2D::ImageSize2D(int width, int height)
         : width_(width), height_(height) {}
 
     void ImageSize2D::resize_to_fit_into(double frame_w, double frame_h) {

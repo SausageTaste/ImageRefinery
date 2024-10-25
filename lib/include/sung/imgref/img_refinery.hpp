@@ -12,7 +12,7 @@ namespace sung {
     class ImageSize2D {
 
     public:
-        ImageSize2D(double width, double height);
+        ImageSize2D(int width, int height);
 
         void resize_to_fit_into(double frame_w, double frame_h);
         void resize_to_enclose(double frame_w, double frame_h);
