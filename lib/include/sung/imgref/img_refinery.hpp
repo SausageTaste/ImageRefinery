@@ -66,7 +66,6 @@ namespace sung {
         Iter_t pick_the_smallest() const;
 
     private:
-        struct Record;
         std::map<std::string, Record> data_;
     };
 
