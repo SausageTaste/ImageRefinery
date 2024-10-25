@@ -29,20 +29,39 @@ namespace {
         const auto nc = img.nchannels();
         const auto npixels = img.spec().image_pixels();
 
-        const OIIO::ROI roi(0, 640, 0, 480, 0, 1, 0, img.nchannels());
+        sung::ImageSize2D img_dim(width, height);
+        img_dim.resize_to_enclose(500, 500);
+        const OIIO::ROI roi(
+            0, img_dim.width(), 0, img_dim.height(), 0, 1, 0, img.nchannels()
+        );
+
+        fmt::print(
+            "Resized: {}x{} -> {}x{}\n",
+            width,
+            height,
+            img_dim.width(),
+            img_dim.height()
+        );
+
         const auto resized = OIIO::ImageBufAlgo::resize(img, nullptr, roi);
         if (resized.has_error())
-            return resized.geterror();
+            return OIIO::geterror();
 
         sung::ImageExportHarbor harbor;
         harbor.build_png("png", resized, 9);
         harbor.build_webp("webp 100", resized, 100);
         harbor.build_webp("webp 80", resized, 80);
-        harbor.build_webp_lossless("webp lossless", resized);
 
         /*
-        std::fstream file(out_path, std::ios::out | std::ios::binary);
-        file.write((const char*)file_buffer.data(), file_buffer.size());
+        {
+            const auto [name, record] = *harbor.pick_the_smallest();
+            const auto file_name_ext = fmt::format(
+                "{}_{}.{}", path.stem().string(), name, record.file_ext_
+            );
+            const auto out_path = path.parent_path() / file_name_ext;
+            std::fstream file(out_path, std::ios::out | std::ios::binary);
+            file.write((const char*)record.data_.data(), record.data_.size());
+        }
         */
 
         return "success";
@@ -68,12 +87,11 @@ int main() {
         return false;
     };
 
-    file_list.add("D:/Downloads/Images/ua/ua.jpg", false);
+    file_list.add("D:/Downloads/Images", false);
 
     for (const auto& path : file_list.get_files()) {
         const auto result = ::do_work(path);
         fmt::print("{}: {}\n", path.string(), result);
-        break;
     }
 
     return 0;
