@@ -1,5 +1,6 @@
 add_library(sung_libimgref STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/filesys.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/img_refinery.cpp
 )
 add_library(sung::libimgref ALIAS sung_libimgref)
 target_include_directories(sung_libimgref PUBLIC

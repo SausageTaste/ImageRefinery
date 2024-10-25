@@ -1,6 +1,11 @@
 {
     "dependencies": [
         "ftxui",
-        "openimageio"
+        {
+            "name": "openimageio",
+            "features": [
+                "webp"
+            ]
+        }
     ]
 }

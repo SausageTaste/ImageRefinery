@@ -1,10 +1,11 @@
+#include <map>
 #include <vector>
 
-#include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 #include <fmt/core.h>
 
 #include "sung/imgref/filesys.hpp"
+#include "sung/imgref/img_refinery.hpp"
 
 
 namespace {
@@ -14,14 +15,6 @@ namespace {
 
     std::string make_str_lower(std::string str) {
         std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-        return str;
-    }
-
-    std::string strip_quotes(std::string str) {
-        while (str.starts_with('"')) str = str.substr(1);
-        while (str.ends_with('"')) str = str.substr(0, str.size() - 1);
-        while (str.starts_with('\'')) str = str.substr(1);
-        while (str.ends_with('\'')) str = str.substr(0, str.size() - 1);
         return str;
     }
 
@@ -41,24 +34,16 @@ namespace {
         if (resized.has_error())
             return resized.geterror();
 
-        const auto new_name_ext = fmt::format(
-            "{}_resized.png", path.stem().string()
-        );
-        const auto out_path = path.parent_path() / new_name_ext;
+        sung::ImageExportHarbor harbor;
+        harbor.build_png("png", resized, 9);
+        harbor.build_webp("webp 100", resized, 100);
+        harbor.build_webp("webp 80", resized, 80);
+        harbor.build_webp_lossless("webp lossless", resized);
 
-        OIIO::ImageSpec spec{
-            roi.width(), roi.height(), nc, OIIO::TypeDesc::UINT8
-        };
-        spec["png:compressionLevel"] = 9;
-
-        auto out = OIIO::ImageOutput::create(out_path.string());
-        out->open(out_path.string(), spec);
-
-        resized.write(
-            out.get(),
-            [](void* opaque_data, float portion_done) { return false; },
-            nullptr
-        );
+        /*
+        std::fstream file(out_path, std::ios::out | std::ios::binary);
+        file.write((const char*)file_buffer.data(), file_buffer.size());
+        */
 
         return "success";
     }
@@ -73,6 +58,7 @@ int main() {
             ".png",
             ".jpg",
             ".jpeg",
+            ".webp",
         };
 
         const auto ext = ::make_str_lower(path.extension().string());
@@ -82,10 +68,11 @@ int main() {
         return false;
     };
 
-    file_list.add("D:/Downloads/Images/ua.jpg", false);
+    file_list.add("D:/Downloads/Images/ua/ua.jpg", false);
 
     for (const auto& path : file_list.get_files()) {
         const auto result = ::do_work(path);
+        fmt::print("{}: {}\n", path.string(), result);
         break;
     }
 
