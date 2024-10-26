@@ -18,8 +18,15 @@ namespace {
         return str;
     }
 
+    std::string make_path_utf8(const fs::path& path) {
+        const auto path_str = path.u8string();
+        return std::string(
+            reinterpret_cast<const char*>(path_str.c_str()), path_str.size()
+        );
+    }
+
     std::string do_work(const fs::path& path) {
-        OIIO::ImageBuf img(path.string());
+        OIIO::ImageBuf img(::make_path_utf8(path));
         const auto ok = img.read();
         if (!ok)
             return img.geterror();
@@ -93,7 +100,7 @@ int main() {
 
     for (const auto& path : file_list.get_files()) {
         const auto result = ::do_work(path);
-        fmt::print("{}: {}\n", path.string(), result);
+        fmt::print("{}: {}\n", ::make_path_utf8(path), result);
     }
 
     return 0;
