@@ -8,5 +8,6 @@ target_include_directories(sung_libimgref PUBLIC
 )
 target_link_libraries(sung_libimgref PUBLIC
     OpenImageIO::OpenImageIO
+    sungtools::general
 )
 target_compile_features(sung_libimgref PUBLIC cxx_std_20)

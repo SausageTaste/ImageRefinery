@@ -5,6 +5,8 @@ set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 project(ImageRefinery)
 
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/extern/SungToolsCpp)
+
 find_package(ftxui CONFIG REQUIRED)
 find_package(OpenImageIO CONFIG REQUIRED)
 

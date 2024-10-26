@@ -3,6 +3,7 @@
 
 #include <OpenImageIO/imagebufalgo.h>
 #include <fmt/core.h>
+#include <sung/general/stringtool.hpp>
 
 #include "sung/imgref/filesys.hpp"
 #include "sung/imgref/img_refinery.hpp"
@@ -71,7 +72,9 @@ namespace {
             );
             const auto out_path = output_dir / file_name_ext;
             fmt::print(
-                " * {} ({})\n", ::make_path_utf8(out_path), record.data_.size()
+                " * {} ({})\n",
+                ::make_path_utf8(out_path),
+                sung::format_bytes(record.data_.size())
             );
             std::fstream file(out_path, std::ios::out | std::ios::binary);
             file.write((const char*)record.data_.data(), record.data_.size());
