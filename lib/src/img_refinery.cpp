@@ -50,6 +50,12 @@ namespace {
             return true;
     }
 
+    bool is_img_monochrome(const OIIO::ImageBuf& img) {
+        auto roi = OIIO::get_roi(img.spec());
+        roi.chend = std::min(3, roi.chend);  // only test RGB, not alpha
+        return OIIO::ImageBufAlgo::isMonochrome(img, 0.01f, roi);
+    }
+
 }  // namespace
 
 
@@ -282,6 +288,7 @@ namespace sung::oiio {
         props.height_ = spec.height;
         props.animated_ = 0 != spec.get_int_attribute("oiio:Movie", 0);
         props.transparent_ = ::is_img_transparent(img_buf);
+        props.monochrome_ = ::is_img_monochrome(img_buf);
 
         return props;
     }

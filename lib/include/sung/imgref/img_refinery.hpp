@@ -42,6 +42,7 @@ namespace sung::oiio {
         int height_ = 0;
         bool animated_ = false;
         bool transparent_ = false;
+        bool monochrome_ = false;
     };
 
 

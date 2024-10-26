@@ -29,6 +29,8 @@ namespace {
             return "Animated image not supported";
         if (props.transparent_)
             fmt::print("Transparent image\n");
+        if (props.monochrome_)
+            fmt::print("Monochrome image\n");
 
         sung::oiio::ImageSize2D img_dim(props.width_, props.height_);
         img_dim.resize_for_jpeg();
@@ -67,7 +69,7 @@ namespace {
 
             const auto out_path = output_dir / file_name_ext;
             fmt::print(
-                "{} ({})\n",
+                "Save {} ({})\n",
                 sung::make_utf8_str(out_path),
                 sung::format_bytes(record.data_.size())
             );
