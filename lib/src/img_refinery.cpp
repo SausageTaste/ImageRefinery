@@ -90,6 +90,14 @@ namespace sung {
             return true;
     }
 
+
+    ImageProperties ImageAnalyser::get_properties() const {
+        return ImageProperties{
+            .animated_ = this->is_animated(),
+            .transparent_ = this->is_transparent(),
+        };
+    }
+
 }  // namespace sung
 
 

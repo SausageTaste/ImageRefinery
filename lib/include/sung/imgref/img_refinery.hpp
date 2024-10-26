@@ -30,6 +30,12 @@ namespace sung {
     };
 
 
+    struct ImageProperties {
+        bool animated_ = false;
+        bool transparent_ = false;
+    };
+
+
     class ImageAnalyser {
 
     public:
@@ -37,6 +43,8 @@ namespace sung {
 
         bool is_animated() const;
         bool is_transparent() const;
+
+        ImageProperties get_properties() const;
 
     private:
         const OIIO::ImageBuf& img_;

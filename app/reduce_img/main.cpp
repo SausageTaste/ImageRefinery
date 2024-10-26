@@ -19,7 +19,7 @@ namespace {
         return str;
     }
 
-    std::string do_work(const fs::path& path) {
+    std::string do_work(const fs::path& path, bool webp) {
         OIIO::ImageBuf img(sung::make_utf8_str(path));
         const auto ok = img.read();
         if (!ok)
@@ -31,16 +31,18 @@ namespace {
         const auto nc = img.nchannels();
         const auto npixels = spec.image_pixels();
 
-        const sung::ImageAnalyser anal{ img };
-        if (anal.is_animated())
-            fmt::print("Animated image\n");
-        if (anal.is_transparent())
+        const auto props = sung::ImageAnalyser{ img }.get_properties();
+        if (props.animated_)
+            return "Animated image not supported";
+        if (props.transparent_)
             fmt::print("Transparent image\n");
 
         sung::ImageSize2D img_dim(width, height);
         img_dim.resize_for_jpeg();
-        img_dim.resize_for_webp();
         img_dim.resize_to_enclose(2000, 2000);
+        if (webp)
+            img_dim.resize_for_webp();
+
         const OIIO::ROI roi(
             0, img_dim.width(), 0, img_dim.height(), 0, 1, 0, img.nchannels()
         );
@@ -59,8 +61,10 @@ namespace {
 
         sung::ImageExportHarbor harbor;
         harbor.build_png("png", resized, 9);
-        harbor.build_jpeg("jpeg 80", resized, 80);
-        harbor.build_webp("webp 80", resized, 80);
+        if (!props.transparent_)
+            harbor.build_jpeg("jpeg 80", resized, 80);
+        if (webp)
+            harbor.build_webp("webp 80", resized, 80);
 
         const fs::path output_dir = "C:/Users/woos8/Desktop/ImageRefineryTest";
 
@@ -105,7 +109,7 @@ int main() {
     file_list.add("C:/Users/woos8/Desktop/Test Images", false);
 
     for (const auto& path : file_list.get_files()) {
-        const auto result = ::do_work(path);
+        const auto result = ::do_work(path, false);
         fmt::print(" * {}: {}\n", sung::make_utf8_str(path), result);
     }
 
