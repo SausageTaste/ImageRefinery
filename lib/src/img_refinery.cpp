@@ -1,7 +1,10 @@
 #include "sung/imgref/img_refinery.hpp"
 
 #include <OpenImageIO/filesystem.h>
+#include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
+
+#include "sung/imgref/filesys.hpp"
 
 
 namespace {
@@ -11,8 +14,47 @@ namespace {
 }  // namespace
 
 
+namespace {
+
+    class OIIOImage2D : public sung::oiio::IImage2D {
+
+    public:
+        OIIOImage2D(const OIIO::string_view path) : img_(path) {}
+
+        OIIO::ImageBuf& get() { return img_; }
+        const OIIO::ImageBuf& get() const { return img_; }
+
+    private:
+        OIIO::ImageBuf img_;
+    };
+
+
+    bool is_img_transparent(const OIIO::ImageBuf& img) {
+        const auto& spec = img.spec();
+
+        auto alpha = spec.alpha_channel;
+        if (alpha >= spec.nchannels) {
+            auto& ch_names = spec.channelnames;
+            const auto it = std::find(ch_names.begin(), ch_names.end(), "A");
+            if (it != ch_names.end())
+                alpha = static_cast<int>(std::distance(ch_names.begin(), it));
+            else
+                return false;
+        }
+
+        if (alpha < 0)
+            return false;
+        else if (OIIO::ImageBufAlgo::isConstantChannel(img, alpha, 1.f, 0.1f))
+            return false;
+        else
+            return true;
+    }
+
+}  // namespace
+
+
 // ImageSize2D
-namespace sung {
+namespace sung::oiio {
 
     ImageSize2D::ImageSize2D(int width, int height)
         : width_(width), height_(height) {}
@@ -57,52 +99,11 @@ namespace sung {
             return ::round_int(height_);
     }
 
-}  // namespace sung
-
-
-// ImageAnalyser
-namespace sung {
-
-    ImageAnalyser::ImageAnalyser(const OIIO::ImageBuf& img) : img_(img) {}
-
-    bool ImageAnalyser::is_animated() const {
-        return 0 != img_.spec().get_int_attribute("oiio:Movie", 0);
-    }
-
-    bool ImageAnalyser::is_transparent() const {
-        const auto& spec = img_.spec();
-
-        auto alpha = spec.alpha_channel;
-        if (alpha >= spec.nchannels) {
-            auto& ch_names = spec.channelnames;
-            const auto it = std::find(ch_names.begin(), ch_names.end(), "A");
-            if (it != ch_names.end())
-                alpha = static_cast<int>(std::distance(ch_names.begin(), it));
-            else
-                return false;
-        }
-
-        if (alpha < 0)
-            return false;
-        else if (OIIO::ImageBufAlgo::isConstantChannel(img_, alpha, 1.f, 0.1f))
-            return false;
-        else
-            return true;
-    }
-
-
-    ImageProperties ImageAnalyser::get_properties() const {
-        return ImageProperties{
-            .animated_ = this->is_animated(),
-            .transparent_ = this->is_transparent(),
-        };
-    }
-
-}  // namespace sung
+}  // namespace sung::oiio
 
 
 // ImageExportHarbor
-namespace sung {
+namespace sung::oiio {
 
     ImageExportHarbor::ImageExportHarbor() {}
 
@@ -110,9 +111,11 @@ namespace sung {
 
     std::string ImageExportHarbor::build_png(
         const std::string_view& name,
-        const OIIO::ImageBuf& img,
+        const IImage2D& img_ptr,
         const int compression_level
     ) {
+        const auto& img = dynamic_cast<const OIIOImage2D&>(img_ptr).get();
+
         auto spec = img.spec();
         spec["png:compressionLevel"] = compression_level;
 
@@ -141,9 +144,11 @@ namespace sung {
 
     std::string ImageExportHarbor::build_jpeg(
         const std::string_view& name,
-        const OIIO::ImageBuf& img,
+        const IImage2D& img_ptr,
         const int quality_level
     ) {
+        const auto& img = dynamic_cast<const OIIOImage2D&>(img_ptr).get();
+
         auto spec = img.spec();
         spec["CompressionQuality"] = quality_level;
 
@@ -172,9 +177,11 @@ namespace sung {
 
     std::string ImageExportHarbor::build_webp(
         const std::string_view& name,
-        const OIIO::ImageBuf& img,
+        const IImage2D& img_ptr,
         const int compression_level
     ) {
+        const auto& img = dynamic_cast<const OIIOImage2D&>(img_ptr).get();
+
         auto spec = img.spec();
         spec["CompressionQuality"] = compression_level;
 
@@ -202,8 +209,10 @@ namespace sung {
     }
 
     std::string ImageExportHarbor::build_webp_lossless(
-        const std::string_view& name, const OIIO::ImageBuf& img
+        const std::string_view& name, const IImage2D& img_ptr
     ) {
+        const auto& img = dynamic_cast<const OIIOImage2D&>(img_ptr).get();
+
         auto spec = img.spec();
         spec["Compression"] = "lossless";
 
@@ -248,4 +257,56 @@ namespace sung {
         );
     }
 
-}  // namespace sung
+}  // namespace sung::oiio
+
+
+// namespace sung::oiio
+namespace sung::oiio {
+
+    ImgExpected open_img(const std::filesystem::path& path) {
+        auto ptr = std::make_unique<::OIIOImage2D>(make_utf8_str(path));
+        auto& img = ptr->get();
+        if (!img.read())
+            sung::unexpected(img.geterror());
+
+        return std::move(ptr);
+    }
+
+    ImageProperties get_img_properties(const IImage2D& img) {
+        ImageProperties props;
+
+        const auto& img_buf = dynamic_cast<const OIIOImage2D&>(img).get();
+        const auto& spec = img_buf.spec();
+
+        props.width_ = spec.width;
+        props.height_ = spec.height;
+        props.animated_ = 0 != spec.get_int_attribute("oiio:Movie", 0);
+        props.transparent_ = ::is_img_transparent(img_buf);
+
+        return props;
+    }
+
+    ImgExpected resize_img(const IImage2D& img, const ImageSize2D& img_dim) {
+        const auto& img_buf = dynamic_cast<const OIIOImage2D&>(img).get();
+        const OIIO::ROI roi(
+            0,
+            img_dim.width(),
+            0,
+            img_dim.height(),
+            0,
+            1,
+            0,
+            img_buf.nchannels()
+        );
+
+        auto out = std::make_unique<OIIOImage2D>("");
+        const auto res = OIIO::ImageBufAlgo::resize(
+            out->get(), img_buf, nullptr, roi
+        );
+        if (!res)
+            return sung::unexpected(OIIO::geterror());
+
+        return std::move(out);
+    }
+
+}  // namespace sung::oiio

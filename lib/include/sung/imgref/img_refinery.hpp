@@ -1,13 +1,20 @@
 #pragma once
 
+#include <filesystem>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
-#include <OpenImageIO/imagebuf.h>
+#include <sung/general/expected.hpp>
 
 
-namespace sung {
+namespace sung::oiio {
+
+    struct IImage2D {
+        virtual ~IImage2D() = default;
+    };
+
 
     class ImageSize2D {
 
@@ -31,24 +38,20 @@ namespace sung {
 
 
     struct ImageProperties {
+        int width_ = 0;
+        int height_ = 0;
         bool animated_ = false;
         bool transparent_ = false;
     };
 
 
-    class ImageAnalyser {
+    using ImgExpected = sung::Expected<std::unique_ptr<IImage2D>, std::string>;
 
-    public:
-        ImageAnalyser(const OIIO::ImageBuf& img);
+    ImgExpected open_img(const std::filesystem::path& path);
 
-        bool is_animated() const;
-        bool is_transparent() const;
+    ImageProperties get_img_properties(const IImage2D& img);
 
-        ImageProperties get_properties() const;
-
-    private:
-        const OIIO::ImageBuf& img_;
-    };
+    ImgExpected resize_img(const IImage2D& img, const ImageSize2D& img_dim);
 
 
     class ImageExportHarbor {
@@ -66,24 +69,24 @@ namespace sung {
         // Returns empty string on success, error message otherwise.
         std::string build_png(
             const std::string_view& name,
-            const OIIO::ImageBuf& img,
+            const IImage2D& img,
             const int compression_level = 9
         );
 
         std::string build_jpeg(
             const std::string_view& name,
-            const OIIO::ImageBuf& img,
+            const IImage2D& img,
             const int quality_level
         );
 
         std::string build_webp(
             const std::string_view& name,
-            const OIIO::ImageBuf& img,
+            const IImage2D& img,
             const int compression_level = 100
         );
 
         std::string build_webp_lossless(
-            const std::string_view& name, const OIIO::ImageBuf& img
+            const std::string_view& name, const IImage2D& img
         );
 
         using Iter_t = std::map<std::string, Record>::const_iterator;
@@ -96,4 +99,4 @@ namespace sung {
         std::map<std::string, Record> data_;
     };
 
-}  // namespace sung
+}  // namespace sung::oiio

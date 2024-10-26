@@ -1,7 +1,7 @@
+#include <fstream>
 #include <map>
 #include <vector>
 
-#include <OpenImageIO/imagebufalgo.h>
 #include <fmt/core.h>
 #include <sung/general/stringtool.hpp>
 
@@ -20,51 +20,40 @@ namespace {
     }
 
     std::string do_work(const fs::path& path, bool webp) {
-        OIIO::ImageBuf img(sung::make_utf8_str(path));
-        const auto ok = img.read();
-        if (!ok)
-            return img.geterror();
+        auto img = sung::oiio::open_img(path);
+        if (!img)
+            return img.error();
 
-        const auto& spec = img.spec();
-        const auto width = spec.width;
-        const auto height = spec.height;
-        const auto nc = img.nchannels();
-        const auto npixels = spec.image_pixels();
-
-        const auto props = sung::ImageAnalyser{ img }.get_properties();
+        const auto props = sung::oiio::get_img_properties(**img);
         if (props.animated_)
             return "Animated image not supported";
         if (props.transparent_)
             fmt::print("Transparent image\n");
 
-        sung::ImageSize2D img_dim(width, height);
+        sung::oiio::ImageSize2D img_dim(props.width_, props.height_);
         img_dim.resize_for_jpeg();
         img_dim.resize_to_enclose(2000, 2000);
         if (webp)
             img_dim.resize_for_webp();
 
-        const OIIO::ROI roi(
-            0, img_dim.width(), 0, img_dim.height(), 0, 1, 0, img.nchannels()
-        );
-
         fmt::print(
             "Resize: {}x{} -> {}x{}\n",
-            width,
-            height,
+            props.width_,
+            props.height_,
             img_dim.width(),
             img_dim.height()
         );
 
-        const auto resized = OIIO::ImageBufAlgo::resize(img, nullptr, roi);
-        if (resized.has_error())
-            return OIIO::geterror();
+        const auto resized = sung::oiio::resize_img(**img, img_dim);
+        if (!resized)
+            return resized.error();
 
-        sung::ImageExportHarbor harbor;
-        harbor.build_png("png", resized, 9);
+        sung::oiio::ImageExportHarbor harbor;
+        harbor.build_png("png", **resized, 9);
         if (!props.transparent_)
-            harbor.build_jpeg("jpeg 80", resized, 80);
+            harbor.build_jpeg("jpeg 80", **resized, 80);
         if (webp)
-            harbor.build_webp("webp 80", resized, 80);
+            harbor.build_webp("webp 80", **resized, 80);
 
         const fs::path output_dir = "C:/Users/woos8/Desktop/ImageRefineryTest";
 
@@ -109,7 +98,7 @@ int main() {
     file_list.add("C:/Users/woos8/Desktop/Test Images", false);
 
     for (const auto& path : file_list.get_files()) {
-        const auto result = ::do_work(path, false);
+        const auto result = ::do_work(path, true);
         fmt::print(" * {}: {}\n", sung::make_utf8_str(path), result);
     }
 
