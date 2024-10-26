@@ -97,6 +97,37 @@ namespace sung {
         return {};
     }
 
+    std::string ImageExportHarbor::build_jpeg(
+        const std::string_view& name,
+        const OIIO::ImageBuf& img,
+        const int quality_level
+    ) {
+        auto spec = img.spec();
+        spec["CompressionQuality"] = quality_level;
+
+        auto it = data_.emplace(name, Record{});
+        if (!it.second)
+            return "Name already exists";
+
+        auto& record = it.first->second;
+        record.file_ext_ = "jpg";
+        OIIO::Filesystem::IOVecOutput vecout{ record.data_ };
+
+        auto out = OIIO::ImageOutput::create("jpeg", &vecout);
+        if (!out)
+            return OIIO::geterror();
+        if (!out->open("jpeg", spec))
+            return OIIO::geterror();
+
+        img.write(
+            out.get(),
+            [](void* opaque_data, float portion_done) { return false; },
+            nullptr
+        );
+
+        return {};
+    }
+
     std::string ImageExportHarbor::build_webp(
         const std::string_view& name,
         const OIIO::ImageBuf& img,

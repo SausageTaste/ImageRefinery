@@ -49,6 +49,12 @@ namespace sung {
             const int compression_level = 9
         );
 
+        std::string build_jpeg(
+            const std::string_view& name,
+            const OIIO::ImageBuf& img,
+            const int quality_level
+        );
+
         std::string build_webp(
             const std::string_view& name,
             const OIIO::ImageBuf& img,
