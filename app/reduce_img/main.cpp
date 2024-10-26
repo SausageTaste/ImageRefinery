@@ -39,13 +39,13 @@ namespace {
         sung::ImageSize2D img_dim(width, height);
         img_dim.resize_for_jpeg();
         img_dim.resize_for_webp();
-        img_dim.resize_to_enclose(500, 500);
+        img_dim.resize_to_enclose(2000, 2000);
         const OIIO::ROI roi(
             0, img_dim.width(), 0, img_dim.height(), 0, 1, 0, img.nchannels()
         );
 
         fmt::print(
-            "Resized: {}x{} -> {}x{}\n",
+            " * Resize: {}x{} -> {}x{}\n",
             width,
             height,
             img_dim.width(),
@@ -58,20 +58,24 @@ namespace {
 
         sung::ImageExportHarbor harbor;
         harbor.build_png("png", resized, 9);
-        harbor.build_webp("webp 100", resized, 100);
+        harbor.build_jpeg("jpeg 80", resized, 80);
+        harbor.build_jpeg("jpeg 90", resized, 90);
         harbor.build_webp("webp 80", resized, 80);
+        harbor.build_webp("webp 90", resized, 90);
 
-        /*
-        {
-            const auto [name, record] = *harbor.pick_the_smallest();
+        const fs::path output_dir = "C:/Users/woos8/Desktop/ImageRefineryTest";
+
+        for (auto [name, record] : harbor) {
             const auto file_name_ext = fmt::format(
                 "{}_{}.{}", path.stem().string(), name, record.file_ext_
             );
-            const auto out_path = path.parent_path() / file_name_ext;
+            const auto out_path = output_dir / file_name_ext;
+            fmt::print(
+                " * {} ({})\n", ::make_path_utf8(out_path), record.data_.size()
+            );
             std::fstream file(out_path, std::ios::out | std::ios::binary);
             file.write((const char*)record.data_.data(), record.data_.size());
         }
-        */
 
         return "success";
     }
@@ -96,11 +100,12 @@ int main() {
         return false;
     };
 
-    file_list.add("D:/Downloads/Images", false);
+    file_list.add("C:/Users/woos8/OneDrive/By IP/@Minority/Snowbreak", true);
 
     for (const auto& path : file_list.get_files()) {
         const auto result = ::do_work(path);
         fmt::print("{}: {}\n", ::make_path_utf8(path), result);
+        break;
     }
 
     return 0;
