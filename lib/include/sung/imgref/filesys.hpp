@@ -10,6 +10,13 @@ namespace sung {
     namespace fs = std::filesystem;
 
 
+    std::string make_utf8_str(const fs::path& path);
+
+    std::string normalize_utf8_str(const std::string& str);
+    std::u8string normalize_utf8_str(const std::u8string& str);
+    fs::path normalize_utf8_path(const fs::path& path);
+
+
     class FileList {
 
     public:

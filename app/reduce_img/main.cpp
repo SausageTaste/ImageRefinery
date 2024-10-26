@@ -19,15 +19,8 @@ namespace {
         return str;
     }
 
-    std::string make_path_utf8(const fs::path& path) {
-        const auto path_str = path.u8string();
-        return std::string(
-            reinterpret_cast<const char*>(path_str.c_str()), path_str.size()
-        );
-    }
-
     std::string do_work(const fs::path& path) {
-        OIIO::ImageBuf img(::make_path_utf8(path));
+        OIIO::ImageBuf img(sung::make_utf8_str(path));
         const auto ok = img.read();
         if (!ok)
             return img.geterror();
@@ -60,20 +53,22 @@ namespace {
         sung::ImageExportHarbor harbor;
         harbor.build_png("png", resized, 9);
         harbor.build_jpeg("jpeg 80", resized, 80);
-        harbor.build_jpeg("jpeg 90", resized, 90);
-        harbor.build_webp("webp 80", resized, 80);
-        harbor.build_webp("webp 90", resized, 90);
+        // harbor.build_webp("webp 80", resized, 80);
 
         const fs::path output_dir = "C:/Users/woos8/Desktop/ImageRefineryTest";
 
         for (auto [name, record] : harbor) {
-            const auto file_name_ext = fmt::format(
-                "{}_{}.{}", path.stem().string(), name, record.file_ext_
-            );
+            auto file_name_ext = path.stem();
+            file_name_ext += "_";
+            file_name_ext += name;
+            file_name_ext += ".";
+            file_name_ext += record.file_ext_;
+            file_name_ext = sung::normalize_utf8_path(file_name_ext);
+
             const auto out_path = output_dir / file_name_ext;
             fmt::print(
                 " * {} ({})\n",
-                ::make_path_utf8(out_path),
+                sung::make_utf8_str(out_path),
                 sung::format_bytes(record.data_.size())
             );
             std::fstream file(out_path, std::ios::out | std::ios::binary);
@@ -107,8 +102,7 @@ int main() {
 
     for (const auto& path : file_list.get_files()) {
         const auto result = ::do_work(path);
-        fmt::print("{}: {}\n", ::make_path_utf8(path), result);
-        break;
+        fmt::print("{}: {}\n", sung::make_utf8_str(path), result);
     }
 
     return 0;

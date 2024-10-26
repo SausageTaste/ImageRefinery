@@ -5,8 +5,10 @@
 #include <set>
 
 #include <fmt/core.h>
+#include <uni_algo/norm.h>
 
 
+// FileList
 namespace sung {
 
     FileList::FileList()
@@ -73,6 +75,31 @@ namespace sung {
                 files_.insert(e.path());
             }
         }
+    }
+
+}  // namespace sung
+
+
+// Free functions
+namespace sung {
+
+    std::string make_utf8_str(const fs::path& path) {
+        const auto path_str = path.u8string();
+        return std::string(
+            reinterpret_cast<const char*>(path_str.c_str()), path_str.size()
+        );
+    }
+
+    std::string normalize_utf8_str(const std::string& str) {
+        return una::norm::to_nfc_utf8(str);
+    }
+
+    std::u8string normalize_utf8_str(const std::u8string& str) {
+        return una::norm::to_nfc_utf8(str);
+    }
+
+    fs::path normalize_utf8_path(const fs::path& path) {
+        return una::norm::to_nfc_utf8(path.u8string());
     }
 
 }  // namespace sung

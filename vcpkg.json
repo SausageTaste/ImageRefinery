@@ -6,6 +6,7 @@
             "features": [
                 "webp"
             ]
-        }
+        },
+        "uni-algo"
     ]
 }
