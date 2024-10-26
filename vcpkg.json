@@ -4,6 +4,7 @@
         {
             "name": "openimageio",
             "features": [
+                "gif",
                 "webp"
             ]
         },

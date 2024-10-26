@@ -30,6 +30,19 @@ namespace sung {
     };
 
 
+    class ImageAnalyser {
+
+    public:
+        ImageAnalyser(const OIIO::ImageBuf& img);
+
+        bool is_animated() const;
+        bool is_transparent() const;
+
+    private:
+        const OIIO::ImageBuf& img_;
+    };
+
+
     class ImageExportHarbor {
 
     public:

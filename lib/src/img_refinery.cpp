@@ -1,6 +1,7 @@
 #include "sung/imgref/img_refinery.hpp"
 
 #include <OpenImageIO/filesystem.h>
+#include <OpenImageIO/imagebufalgo.h>
 
 
 namespace {
@@ -54,6 +55,39 @@ namespace sung {
             return ::round_int(height_ * factor);
         else
             return ::round_int(height_);
+    }
+
+}  // namespace sung
+
+
+// ImageAnalyser
+namespace sung {
+
+    ImageAnalyser::ImageAnalyser(const OIIO::ImageBuf& img) : img_(img) {}
+
+    bool ImageAnalyser::is_animated() const {
+        return 0 != img_.spec().get_int_attribute("oiio:Movie", 0);
+    }
+
+    bool ImageAnalyser::is_transparent() const {
+        const auto& spec = img_.spec();
+
+        auto alpha = spec.alpha_channel;
+        if (alpha >= spec.nchannels) {
+            auto& ch_names = spec.channelnames;
+            const auto it = std::find(ch_names.begin(), ch_names.end(), "A");
+            if (it != ch_names.end())
+                alpha = static_cast<int>(std::distance(ch_names.begin(), it));
+            else
+                return false;
+        }
+
+        if (alpha < 0)
+            return false;
+        else if (OIIO::ImageBufAlgo::isConstantChannel(img_, alpha, 1.f, 0.1f))
+            return false;
+        else
+            return true;
     }
 
 }  // namespace sung
