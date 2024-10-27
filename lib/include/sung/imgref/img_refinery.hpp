@@ -27,6 +27,9 @@ namespace sung::oiio {
         void resize_for_jpeg();
         void resize_for_webp();
 
+        // iPhone 16 Pro
+        void resize_for_i16p();
+
         int width() const;
         int height() const;
 

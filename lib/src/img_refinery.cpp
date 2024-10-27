@@ -89,6 +89,10 @@ namespace sung::oiio {
         this->resize_to_fit_into(MAX_LEN, MAX_LEN);
     }
 
+    void ImageSize2D::resize_for_i16p() {
+        this->resize_to_fit_into(1206, 2622);
+    }
+
     int ImageSize2D::width() const {
         const auto factor = *factors_.begin();
         if (factor < 1)
