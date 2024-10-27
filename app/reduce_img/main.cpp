@@ -19,7 +19,11 @@ namespace {
         return str;
     }
 
-    std::string do_work(const fs::path& path, bool webp) {
+    std::string do_work(
+        const fs::path& path,
+        const sung::ExternalResultLoc& output_loc,
+        bool webp
+    ) {
         auto img = sung::oiio::open_img(path);
         if (!img)
             return img.error();
@@ -59,8 +63,6 @@ namespace {
             harbor.build_jpeg("jpeg 80 monochrome", **mod, 80);
         }
 
-        const fs::path output_dir = "C:/Users/woos8/Desktop/ImageRefineryTest";
-
         for (auto& [name, record] : harbor.get_sorted_by_size()) {
             auto file_name_ext = path.stem();
             file_name_ext += "_";
@@ -68,9 +70,13 @@ namespace {
             file_name_ext += ".";
             file_name_ext += record->file_ext_;
             file_name_ext = sung::normalize_utf8_path(file_name_ext);
+            file_name_ext = path.parent_path() / file_name_ext;
 
-            const auto out_path = output_dir / file_name_ext;
+            const auto out_path = output_loc.get_path_for(file_name_ext);
+            sung::create_folder(out_path.parent_path());
             std::fstream file(out_path, std::ios::out | std::ios::binary);
+            if (!file)
+                return "Failed to open file";
             file.write((const char*)record->data_.data(), record->data_.size());
 
             break;
@@ -98,8 +104,13 @@ int main() {
 
     file_list.add("C:/Users/woos8/Desktop/Test Images", false);
 
+    sung::ExternalResultLoc output_loc(
+        file_list.get_longest_common_prefix(),
+        "C:/Users/woos8/Desktop/ImageRefineryTest"
+    );
+
     for (const auto& path : file_list.get_files()) {
-        const auto result = ::do_work(path, false);
+        const auto result = ::do_work(path, output_loc, false);
         fmt::print(" * {}: {}\n", sung::make_utf8_str(path), result);
     }
 

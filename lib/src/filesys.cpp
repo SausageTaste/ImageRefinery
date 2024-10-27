@@ -8,6 +8,18 @@
 #include <uni_algo/norm.h>
 
 
+namespace {
+
+    sung::fs::path get_deepest_folder(const sung::fs::path& path) {
+        if (sung::fs::is_directory(path))
+            return path;
+        else
+            return get_deepest_folder(path.parent_path());
+    }
+
+}  // namespace
+
+
 // FileList
 namespace sung {
 
@@ -45,6 +57,28 @@ namespace sung {
         return out;
     }
 
+    fs::path FileList::get_longest_common_prefix() const {
+        if (files_.empty())
+            return {};
+
+        auto it = files_.begin();
+        auto prefix = *it;
+        for (++it; it != files_.end(); ++it) {
+            const auto& path = *it;
+            const auto& prefix_str = prefix.u8string();
+            const auto& path_str = path.u8string();
+            const auto len = std::min(prefix_str.size(), path_str.size());
+            size_t i = 0;
+            for (; i < len; ++i) {
+                if (prefix_str[i] != path_str[i])
+                    break;
+            }
+            prefix = fs::path(prefix_str.substr(0, i));
+        }
+
+        return ::get_deepest_folder(prefix);
+    }
+
     bool FileList::is_valid_file(const fs::directory_entry& entry) const {
         return entry.is_regular_file() && file_filter_(entry.path());
     }
@@ -80,6 +114,23 @@ namespace sung {
 }  // namespace sung
 
 
+// ExternalResultLoc
+namespace sung {
+
+    ExternalResultLoc::ExternalResultLoc(
+        const fs::path& input_root, const fs::path& output_dir
+    )
+        : input_root_(input_root), output_dir_(output_dir) {}
+
+    fs::path ExternalResultLoc::get_path_for(const fs::path& path) const {
+        const auto rel_path = path.lexically_relative(input_root_);
+        const auto out = output_dir_ / rel_path;
+        return out;
+    }
+
+}  // namespace sung
+
+
 // Free functions
 namespace sung {
 
@@ -101,5 +152,14 @@ namespace sung {
     fs::path normalize_utf8_path(const fs::path& path) {
         return una::norm::to_nfc_utf8(path.u8string());
     }
+
+    void create_folder(const fs::path& path) {
+        const auto parent = path.parent_path();
+        if (!fs::exists(parent))
+            create_folder(parent);
+
+        fs::create_directories(path);
+    }
+
 
 }  // namespace sung
