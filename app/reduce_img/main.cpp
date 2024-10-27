@@ -27,10 +27,6 @@ namespace {
         const auto props = sung::oiio::get_img_properties(**img);
         if (props.animated_)
             return "Animated image not supported";
-        if (props.transparent_)
-            fmt::print("Transparent image\n");
-        if (props.monochrome_)
-            fmt::print("Monochrome image\n");
 
         sung::oiio::ImageSize2D img_dim(props.width_, props.height_);
         img_dim.resize_for_jpeg();
@@ -38,43 +34,46 @@ namespace {
         if (webp)
             img_dim.resize_for_webp();
 
-        fmt::print(
-            "Resize: {}x{} -> {}x{}\n",
-            props.width_,
-            props.height_,
-            img_dim.width(),
-            img_dim.height()
-        );
+        auto mod = sung::oiio::resize_img(**img, img_dim);
+        if (!mod)
+            return mod.error();
 
-        const auto resized = sung::oiio::resize_img(**img, img_dim);
-        if (!resized)
-            return resized.error();
+        if (!props.transparent_) {
+            mod = sung::oiio::drop_alpha_ch(**mod);
+            if (!mod)
+                return mod.error();
+        }
 
         sung::oiio::ImageExportHarbor harbor;
-        harbor.build_png("png", **resized, 9);
-        if (!props.transparent_)
-            harbor.build_jpeg("jpeg 80", **resized, 80);
         if (webp)
-            harbor.build_webp("webp 80", **resized, 80);
+            harbor.build_webp("webp 80", **mod, 80);
+        if (props.transparent_)
+            harbor.build_png("png", **mod, 9);
+        else
+            harbor.build_jpeg("jpeg 80", **mod, 80);
+
+        if (props.monochrome_ && !props.transparent_) {
+            mod = sung::oiio::merge_greyscale_channels(**mod);
+            if (!mod)
+                return mod.error();
+            harbor.build_jpeg("jpeg 80 monochrome", **mod, 80);
+        }
 
         const fs::path output_dir = "C:/Users/woos8/Desktop/ImageRefineryTest";
 
-        for (auto [name, record] : harbor) {
+        for (auto& [name, record] : harbor.get_sorted_by_size()) {
             auto file_name_ext = path.stem();
             file_name_ext += "_";
             file_name_ext += name;
             file_name_ext += ".";
-            file_name_ext += record.file_ext_;
+            file_name_ext += record->file_ext_;
             file_name_ext = sung::normalize_utf8_path(file_name_ext);
 
             const auto out_path = output_dir / file_name_ext;
-            fmt::print(
-                "Save {} ({})\n",
-                sung::make_utf8_str(out_path),
-                sung::format_bytes(record.data_.size())
-            );
             std::fstream file(out_path, std::ios::out | std::ios::binary);
-            file.write((const char*)record.data_.data(), record.data_.size());
+            file.write((const char*)record->data_.data(), record->data_.size());
+
+            break;
         }
 
         return "success";
@@ -100,7 +99,7 @@ int main() {
     file_list.add("C:/Users/woos8/Desktop/Test Images", false);
 
     for (const auto& path : file_list.get_files()) {
-        const auto result = ::do_work(path, true);
+        const auto result = ::do_work(path, false);
         fmt::print(" * {}: {}\n", sung::make_utf8_str(path), result);
     }
 

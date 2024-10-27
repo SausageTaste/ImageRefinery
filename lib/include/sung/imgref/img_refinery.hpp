@@ -54,6 +54,10 @@ namespace sung::oiio {
 
     ImgExpected resize_img(const IImage2D& img, const ImageSize2D& img_dim);
 
+    ImgExpected drop_alpha_ch(const IImage2D& img);
+
+    ImgExpected merge_greyscale_channels(const IImage2D& img);
+
 
     class ImageExportHarbor {
 
@@ -90,10 +94,11 @@ namespace sung::oiio {
             const std::string_view& name, const IImage2D& img
         );
 
+        void sort_by_size();
+
         using Iter_t = std::map<std::string, Record>::const_iterator;
 
-        Iter_t begin() const;
-        Iter_t end() const;
+        std::vector<std::pair<std::string, const Record*>> get_sorted_by_size() const;
         Iter_t pick_the_smallest() const;
 
     private:

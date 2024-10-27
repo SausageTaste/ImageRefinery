@@ -245,12 +245,22 @@ namespace sung::oiio {
         return {};
     }
 
-    ImageExportHarbor::Iter_t ImageExportHarbor::begin() const {
-        return data_.begin();
-    }
+    std::vector<std::pair<std::string, const ImageExportHarbor::Record*>>
+    ImageExportHarbor::get_sorted_by_size() const {
+        std::vector<std::pair<std::string, const Record*>> sorted;
+        sorted.reserve(data_.size());
+        for (const auto& [name, record] : data_)
+            sorted.push_back({ name, &record });
 
-    ImageExportHarbor::Iter_t ImageExportHarbor::end() const {
-        return data_.end();
+        std::sort(
+            sorted.begin(),
+            sorted.end(),
+            [](const auto& lhs, const auto& rhs) {
+                return lhs.second->data_.size() < rhs.second->data_.size();
+            }
+        );
+
+        return sorted;
     }
 
     ImageExportHarbor::Iter_t ImageExportHarbor::pick_the_smallest() const {
@@ -311,6 +321,24 @@ namespace sung::oiio {
             out->get(), img_buf, nullptr, roi
         );
         if (!res)
+            return sung::unexpected(OIIO::geterror());
+
+        return std::move(out);
+    }
+
+    ImgExpected drop_alpha_ch(const IImage2D& img_ptr) {
+        const auto& img = dynamic_cast<const OIIOImage2D&>(img_ptr).get();
+        auto out = std::make_unique<OIIOImage2D>("");
+        if (!OIIO::ImageBufAlgo::channels(out->get(), img, 3, {}))
+            return sung::unexpected(OIIO::geterror());
+
+        return std::move(out);
+    }
+
+    ImgExpected merge_greyscale_channels(const IImage2D& img_ptr) {
+        const auto& img = dynamic_cast<const OIIOImage2D&>(img_ptr).get();
+        auto out = std::make_unique<OIIOImage2D>("");
+        if (!OIIO::ImageBufAlgo::channels(out->get(), img, 1, {}))
             return sung::unexpected(OIIO::geterror());
 
         return std::move(out);
