@@ -24,6 +24,7 @@ namespace {
         const sung::ExternalResultLoc& output_loc,
         bool webp
     ) {
+        const auto src_size = fs::file_size(path);
         auto img = sung::oiio::open_img(path);
         if (!img)
             return img.error();
@@ -64,6 +65,9 @@ namespace {
         }
 
         for (auto& [name, record] : harbor.get_sorted_by_size()) {
+            if (record->data_.size() > src_size)
+                return "Result is larger than the source";
+
             auto file_name_ext = path.stem();
             file_name_ext += "_";
             file_name_ext += name;
