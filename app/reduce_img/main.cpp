@@ -5,6 +5,7 @@
 #include <fmt/core.h>
 #include <sung/general/stringtool.hpp>
 
+#include "sung/imgref/argpar.hpp"
 #include "sung/imgref/filesys.hpp"
 #include "sung/imgref/img_refinery.hpp"
 
@@ -92,7 +93,15 @@ namespace {
 }  // namespace
 
 
-int main() {
+int main(int argc, char* argv[]) {
+    sung::ImgRefArgParser arg_parser;
+    if (const auto parse_result = arg_parser.parse(argc, argv)) {
+        fmt::print("{}\n", *parse_result);
+        return 1;
+    }
+
+    return 0;
+
     sung::FileList file_list;
     file_list.file_filter_ = [](fs::path path) {
         static const std::set<std::string> allowed_exts = {

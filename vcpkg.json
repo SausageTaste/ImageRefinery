@@ -1,5 +1,6 @@
 {
     "dependencies": [
+        "argparse",
         "ftxui",
         {
             "name": "openimageio",
