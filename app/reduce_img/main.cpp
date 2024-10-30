@@ -15,11 +15,6 @@ namespace {
     namespace fs = std::filesystem;
 
 
-    std::string make_str_lower(std::string str) {
-        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-        return str;
-    }
-
     std::string do_work(
         const fs::path& path,
         const sung::ExternalResultLoc& output_loc,
@@ -101,18 +96,15 @@ int main(int argc, char* argv[]) {
     }
     const auto& configs = args_expected.value();
 
+    sung::AllowedExtFileFilter file_filter;
+    file_filter.add_allowed_ext(".png");
+    file_filter.add_allowed_ext(".jpg");
+    file_filter.add_allowed_ext(".jpeg");
+    file_filter.add_allowed_ext(".webp");
+    file_filter.add_allowed_ext(".gif");
+
     sung::FileList file_list;
-    file_list.file_filter_ = [](fs::path path) {
-        static const std::set<std::string> allowed_exts = {
-            ".png", ".jpg", ".jpeg", ".webp", ".gif",
-        };
-
-        const auto ext = ::make_str_lower(path.extension().string());
-        if (allowed_exts.find(ext) != allowed_exts.end())
-            return true;
-
-        return false;
-    };
+    file_list.file_filter_ = file_filter;
 
     for (const auto& path : configs.inputs_) {
         file_list.add(path, configs.recursive_);

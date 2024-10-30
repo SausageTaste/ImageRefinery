@@ -6,6 +6,7 @@
 
 #include <fmt/core.h>
 #include <uni_algo/norm.h>
+#include <sung/general/stringtool.hpp>
 
 
 namespace {
@@ -17,7 +18,32 @@ namespace {
             return get_deepest_folder(path.parent_path());
     }
 
+    std::string make_str_lower(std::string str) {
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        return str;
+    }
+
 }  // namespace
+
+
+// AllowedExtFileFilter
+namespace sung {
+
+    bool AllowedExtFileFilter::operator()(const fs::path& path) const {
+        auto ext = make_utf8_str(path.extension().u8string());
+        ext = ::make_str_lower(ext);
+        return allowed_exts_.find(ext) != allowed_exts_.end();
+    }
+
+    void AllowedExtFileFilter::add_allowed_ext(std::string ext) {
+        ext = ::make_str_lower(ext);
+        if (!ext.starts_with("."))
+            ext = "." + ext;
+
+        allowed_exts_.insert(ext);
+    }
+
+}  // namespace sung
 
 
 // FileList

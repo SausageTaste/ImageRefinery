@@ -21,6 +21,17 @@ namespace sung {
     std::optional<fs::path> make_fol_path_with_suffix(const fs::path& path);
 
 
+    class AllowedExtFileFilter {
+
+    public:
+        bool operator()(const fs::path& path) const;
+        void add_allowed_ext(std::string ext);
+
+    private:
+        std::set<std::string> allowed_exts_;
+    };
+
+
     class FileList {
 
     public:
