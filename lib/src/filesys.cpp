@@ -63,7 +63,7 @@ namespace sung {
                 this->add_dir(path);
             }
         } else if (this->is_valid_file(path)) {
-            files_.insert(path);
+            files_.insert(fs::canonical(path));
         }
     }
 
@@ -119,7 +119,7 @@ namespace sung {
 
         for (const auto& e : fs::directory_iterator(path)) {
             if (this->is_valid_file(e)) {
-                files_.insert(e.path());
+                files_.insert(fs::canonical(e.path()));
             }
         }
     }
@@ -132,7 +132,7 @@ namespace sung {
             if (e.is_directory()) {
                 this->add_dir_recur(e.path());
             } else if (this->is_valid_file(e)) {
-                files_.insert(e.path());
+                files_.insert(fs::canonical(e.path()));
             }
         }
     }
