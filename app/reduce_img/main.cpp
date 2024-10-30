@@ -94,13 +94,12 @@ namespace {
 
 
 int main(int argc, char* argv[]) {
-    sung::ImgRefArgParser arg_parser;
-    if (const auto parse_result = arg_parser.parse(argc, argv)) {
-        fmt::print("{}\n", *parse_result);
+    const auto args_expected = sung::parse_args_img_ref(argc, argv);
+    if (!args_expected.has_value()) {
+        fmt::print("{}\n", args_expected.error());
         return 1;
     }
-
-    return 0;
+    const auto& configs = args_expected.value();
 
     sung::FileList file_list;
     file_list.file_filter_ = [](fs::path path) {
@@ -115,15 +114,17 @@ int main(int argc, char* argv[]) {
         return false;
     };
 
-    file_list.add("C:/Users/woos8/Desktop/Test Images", false);
+    for (const auto& path : configs.inputs_) {
+        file_list.add(path, configs.recursive_);
+    }
 
-    sung::ExternalResultLoc output_loc(
+    const sung::ExternalResultLoc output_loc(
         file_list.get_longest_common_prefix(),
-        "C:/Users/woos8/Desktop/ImageRefineryTest"
+        sung::make_fol_path_with_suffix(configs.output_dir_).value()
     );
 
     for (const auto& path : file_list.get_files()) {
-        const auto result = ::do_work(path, output_loc, false);
+        const auto result = ::do_work(path, output_loc, configs.allow_webp_);
         fmt::print(" * {}: {}\n", sung::make_utf8_str(path), result);
     }
 

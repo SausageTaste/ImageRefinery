@@ -2,19 +2,23 @@
 
 #include <optional>
 #include <string>
-#include <vector>
+
+#include <sung/general/expected.hpp>
+
+#include "sung/imgref/configs.hpp"
+#include "sung/imgref/filesys.hpp"
 
 
 namespace sung {
 
-    class ImgRefArgParser {
+    // Returns error message if parsing failed
+    // Returns empty optional if parsing succeeded
+    std::optional<std::string> parse_args_img_ref(
+        ImgRefWorkConfigs& out, int argc, char* argv[]
+    );
 
-    public:
-        // Returns error message if parsing failed
-        // Returns empty optional if parsing succeeded
-        std::optional<std::string> parse(int argc, char* argv[]);
-
-        std::vector<std::string> inputs_;
-    };
+    sung::Expected<ImgRefWorkConfigs, std::string> parse_args_img_ref(
+        int argc, char* argv[]
+    );
 
 }  // namespace sung

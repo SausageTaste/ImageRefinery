@@ -18,6 +18,8 @@ namespace sung {
 
     void create_folder(const fs::path& path);
 
+    std::optional<fs::path> make_fol_path_with_suffix(const fs::path& path);
+
 
     class FileList {
 

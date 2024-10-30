@@ -161,5 +161,18 @@ namespace sung {
         fs::create_directories(path);
     }
 
+    std::optional<fs::path> make_fol_path_with_suffix(const fs::path& path) {
+        if (!fs::exists(path))
+            return path;
+
+        for (int i = 1; i < 1000; ++i) {
+            auto new_path = path;
+            new_path += fmt::format("_{:0>3}", i);
+            if (!fs::exists(new_path))
+                return new_path;
+        }
+
+        return path;
+    }
 
 }  // namespace sung
