@@ -180,13 +180,20 @@ namespace sung {
     }
 
     void create_folder(const fs::path& path) {
-        const auto parent = path.parent_path();
-        if (parent.empty())
+        if (path.empty())
             return;
+
+        const auto parent = path.parent_path();
         if (!fs::exists(parent))
             create_folder(parent);
 
         fs::create_directories(path);
+    }
+
+    fs::path replace_ext(const fs::path& path, const fs::path& new_ext) {
+        auto new_path = path;
+        new_path.replace_extension(new_ext);
+        return new_path;
     }
 
     std::optional<fs::path> make_fol_path_with_suffix(const fs::path& path) {
@@ -201,6 +208,58 @@ namespace sung {
         }
 
         return path;
+    }
+
+}  // namespace sung
+
+
+// FilePathMap
+namespace sung {
+
+    FilePathMap::FilePathMap(const fs::path& src) : src_(src) {}
+
+    const fs::path& FilePathMap::add_with_suffix(
+        const std::string& suffix, const sung::ExternalResultLoc& out_loc
+    ) {
+        auto file_name_ext = src_.stem();
+        file_name_ext += "_";
+        file_name_ext += suffix;
+        file_name_ext = sung::normalize_utf8_path(file_name_ext);
+        file_name_ext = src_.parent_path() / file_name_ext;
+
+        const auto out_path = out_loc.get_path_for(file_name_ext);
+        return files_.insert(out_path).first.operator*();
+    }
+
+    const fs::path* FilePathMap::select_best() const {
+        if (files_.size() == 1)
+            return &(*files_.begin());
+
+        return nullptr;
+    }
+
+    sung::Expected<fs::path, std::string> FilePathMap::replace_src() const {
+        auto sel = this->select_best();
+        if (!sel)
+            return sung::unexpected("No best file selected");
+
+        const auto new_path = sung::replace_ext(src_, sel->extension());
+
+        if (!fs::remove(src_))
+            return sung::unexpected("Failed to remove old file");
+
+        try {
+            fs::rename(*sel, new_path);
+        } catch (const std::exception& e) {
+            return sung::unexpected(fmt::format(
+                "Failed to move file ('{}' -> '{}'): '{}'",
+                sung::make_utf8_str(*sel),
+                sung::make_utf8_str(new_path),
+                e.what()
+            ));
+        }
+
+        return new_path;
     }
 
 }  // namespace sung

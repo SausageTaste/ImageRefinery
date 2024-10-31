@@ -18,7 +18,7 @@ namespace {
     std::string do_work(
         const fs::path& path,
         const sung::ExternalResultLoc& output_loc,
-        bool webp
+        const sung::ImgRefWorkConfigs& configs
     ) {
         const auto src_size = fs::file_size(path);
         auto img = sung::oiio::open_img(path);
@@ -32,7 +32,7 @@ namespace {
         sung::oiio::ImageSize2D img_dim(props.width_, props.height_);
         img_dim.resize_for_jpeg();
         img_dim.resize_to_enclose(2000, 2000);
-        if (webp)
+        if (configs.allow_webp_)
             img_dim.resize_for_webp();
 
         auto mod = sung::oiio::resize_img(**img, img_dim);
@@ -46,7 +46,7 @@ namespace {
         }
 
         sung::oiio::ImageExportHarbor harbor;
-        if (webp)
+        if (configs.allow_webp_)
             harbor.build_webp("webp 80", **mod, 80);
         if (props.transparent_)
             harbor.build_png("png", **mod, 9);
@@ -60,19 +60,15 @@ namespace {
             harbor.build_jpeg("jpeg 80 monochrome", **mod, 80);
         }
 
+        sung::FilePathMap img_map{ path };
         for (auto& [name, record] : harbor.get_sorted_by_size()) {
-            if (record->data_.size() > src_size)
-                return "Result is larger than the source";
+            if (record->data_.size() >= src_size * 0.9)
+                return "Not enough reduction";
 
-            auto file_name_ext = path.stem();
-            file_name_ext += "_";
-            file_name_ext += name;
-            file_name_ext += ".";
-            file_name_ext += record->file_ext_;
-            file_name_ext = sung::normalize_utf8_path(file_name_ext);
-            file_name_ext = path.parent_path() / file_name_ext;
+            const auto out_path = img_map.add_with_suffix(
+                fmt::format("{}.{}", name, record->file_ext_), output_loc
+            );
 
-            const auto out_path = output_loc.get_path_for(file_name_ext);
             sung::create_folder(out_path.parent_path());
             std::fstream file(out_path, std::ios::out | std::ios::binary);
             if (!file)
@@ -80,6 +76,12 @@ namespace {
             file.write((const char*)record->data_.data(), record->data_.size());
 
             break;
+        }
+
+        if (configs.inplace_) {
+            const auto res = img_map.replace_src();
+            if (!res)
+                return "Failed to replace img: " + res.error();
         }
 
         return "success";
@@ -118,7 +120,7 @@ int main(int argc, char* argv[]) {
     );
 
     for (const auto& path : file_list.get_files()) {
-        const auto result = ::do_work(path, output_loc, configs.allow_webp_);
+        const auto result = ::do_work(path, output_loc, configs);
         fmt::print(" * {}: {}\n", sung::make_utf8_str(path), result);
     }
 

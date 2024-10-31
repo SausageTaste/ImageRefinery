@@ -4,6 +4,8 @@
 #include <functional>
 #include <set>
 
+#include <sung/general/expected.hpp>
+
 
 namespace sung {
 
@@ -17,6 +19,8 @@ namespace sung {
     fs::path normalize_utf8_path(const fs::path& path);
 
     void create_folder(const fs::path& path);
+
+    fs::path replace_ext(const fs::path& path, const fs::path& new_ext);
 
     std::optional<fs::path> make_fol_path_with_suffix(const fs::path& path);
 
@@ -72,6 +76,25 @@ namespace sung {
     private:
         fs::path input_root_;
         fs::path output_dir_;
+    };
+
+
+    class FilePathMap {
+
+    public:
+        FilePathMap() = default;
+        FilePathMap(const fs::path& src);
+
+        const fs::path& add_with_suffix(
+            const std::string& suffix, const sung::ExternalResultLoc& out_loc
+        );
+
+        const fs::path* select_best() const;
+        sung::Expected<fs::path, std::string> replace_src() const;
+
+    private:
+        fs::path src_;
+        std::set<fs::path> files_;
     };
 
 }  // namespace sung

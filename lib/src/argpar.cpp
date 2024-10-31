@@ -18,6 +18,10 @@ namespace sung {
 
         p.add_argument("-o", "--output").help("Output folder path");
 
+        p.add_argument("-i", "--inplace")
+            .help("Replace input files with output files")
+            .store_into(out.inplace_);
+
         p.add_argument("-r", "--recursive")
             .help("Walk into input directories recursively")
             .store_into(out.recursive_);
