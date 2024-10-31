@@ -1,6 +1,7 @@
 {
     "dependencies": [
         "argparse",
+        "bshoshany-thread-pool",
         "ftxui",
         {
             "name": "openimageio",

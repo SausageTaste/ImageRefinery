@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <fmt/core.h>
+#include <BS_thread_pool.hpp>
 #include <sung/general/stringtool.hpp>
 
 #include "sung/imgref/argpar.hpp"
@@ -119,10 +120,15 @@ int main(int argc, char* argv[]) {
         )
     );
 
-    for (const auto& path : file_list.get_files()) {
-        const auto result = ::do_work(path, output_loc, configs);
-        fmt::print(" * {}: {}\n", sung::make_utf8_str(path), result);
-    }
+    const std::vector<fs::path> files_vec(
+        file_list.get_files().begin(), file_list.get_files().end()
+    );
+
+    BS::thread_pool pool;
+    pool.submit_sequence<size_t>(0, files_vec.size(), [&](const size_t i) {
+        const auto result = ::do_work(files_vec[i], output_loc, configs);
+        fmt::print(" * {}: {}\n", sung::make_utf8_str(files_vec[i]), result);
+    });
 
     return 0;
 }

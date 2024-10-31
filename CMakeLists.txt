@@ -7,6 +7,7 @@ project(ImageRefinery)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/extern/SungToolsCpp)
 
+find_path(BSHOSHANY_THREAD_POOL_INCLUDE_DIRS "BS_thread_pool.hpp")
 find_package(argparse CONFIG REQUIRED)
 find_package(ftxui CONFIG REQUIRED)
 find_package(OpenImageIO CONFIG REQUIRED)

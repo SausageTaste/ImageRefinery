@@ -6,6 +6,7 @@ add_library(sung_libimgref STATIC
 add_library(sung::libimgref ALIAS sung_libimgref)
 target_include_directories(sung_libimgref PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${BSHOSHANY_THREAD_POOL_INCLUDE_DIRS}
 )
 target_link_libraries(sung_libimgref PUBLIC
     argparse::argparse
