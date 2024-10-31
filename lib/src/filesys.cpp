@@ -181,6 +181,8 @@ namespace sung {
 
     void create_folder(const fs::path& path) {
         const auto parent = path.parent_path();
+        if (parent.empty())
+            return;
         if (!fs::exists(parent))
             create_folder(parent);
 

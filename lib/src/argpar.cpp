@@ -16,10 +16,7 @@ namespace sung {
             .append()
             .store_into(inputs);
 
-        std::string output;
-        p.add_argument("-o", "--output")
-            .help("Output folder path")
-            .store_into(output);
+        p.add_argument("-o", "--output").help("Output folder path");
 
         p.add_argument("-r", "--recursive")
             .help("Walk into input directories recursively")
@@ -38,7 +35,16 @@ namespace sung {
         }
 
         for (auto& x : inputs) out.inputs_.emplace_back(x);
-        out.output_dir_ = fs::path(output).lexically_normal();
+
+        if (p.is_used("output")) {
+            const auto output_dir_str = p.get<std::string>("--color");
+            out.output_dir_ = fs::path(output_dir_str).lexically_normal();
+            if (!fs::exists(out.output_dir_.value())) {
+                return "Output folder does not exist";
+            }
+        } else {
+            out.output_dir_ = std::nullopt;
+        }
 
         return std::nullopt;
     }

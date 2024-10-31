@@ -112,7 +112,9 @@ int main(int argc, char* argv[]) {
 
     const sung::ExternalResultLoc output_loc(
         file_list.get_longest_common_prefix(),
-        sung::make_fol_path_with_suffix(configs.output_dir_).value()
+        *sung::make_fol_path_with_suffix(
+            configs.output_dir_.value_or(fs::temp_directory_path() / "imgref")
+        )
     );
 
     for (const auto& path : file_list.get_files()) {

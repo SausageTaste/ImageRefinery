@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <vector>
 
 
@@ -11,7 +12,7 @@ namespace sung {
 
     struct ImgRefWorkConfigs {
         std::vector<fs::path> inputs_;
-        fs::path output_dir_;
+        std::optional<fs::path> output_dir_;
         bool recursive_ = false;
         bool allow_webp_ = false;
     };
