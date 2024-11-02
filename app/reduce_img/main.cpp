@@ -63,8 +63,11 @@ namespace {
 
         sung::FilePathMap img_map{ path };
         for (auto& [name, record] : harbor.get_sorted_by_size()) {
-            if (record->data_.size() >= src_size * 0.9)
-                return "Not enough reduction";
+            if (record->data_.size() >= src_size * configs.reduction_threshold_)
+                return fmt::format(
+                    "Not enough reduction ({})",
+                    record->data_.size() / (double)src_size
+                );
 
             const auto out_path = img_map.add_with_suffix(
                 fmt::format("{}.{}", name, record->file_ext_), output_loc

@@ -13,6 +13,7 @@ namespace sung {
     struct ImgRefWorkConfigs {
         std::vector<fs::path> inputs_;
         std::optional<fs::path> output_dir_;
+        double reduction_threshold_ = 1;
         bool inplace_ = false;
         bool recursive_ = false;
         bool allow_webp_ = false;

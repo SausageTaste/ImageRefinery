@@ -26,6 +26,11 @@ namespace sung {
             .help("Walk into input directories recursively")
             .store_into(out.recursive_);
 
+        p.add_argument("-t", "--threshold")
+            .help("Reduction threshold")
+            .default_value(1.0)
+            .store_into(out.reduction_threshold_);
+
         p.add_argument("--webp")
             .help("Allow conversion to WebP format")
             .default_value(false)
