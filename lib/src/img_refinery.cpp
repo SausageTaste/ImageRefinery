@@ -332,7 +332,20 @@ namespace sung::oiio {
 
     ImgExpected drop_alpha_ch(const IImage2D& img_ptr) {
         const auto& img = dynamic_cast<const OIIOImage2D&>(img_ptr).get();
+        auto& spec = img.spec();
+
         auto out = std::make_unique<OIIOImage2D>("");
+        if (spec.alpha_channel < 0) {
+            out->get().copy(img);
+            return std::move(out);
+        }
+
+        if (spec.nchannels != 4) {
+            return sung::unexpected(fmt::format(
+                "Cannot drop alpha channel if nchannel is {}", spec.nchannels
+            ));
+        }
+
         if (!OIIO::ImageBufAlgo::channels(out->get(), img, 3, {}))
             return sung::unexpected(OIIO::geterror());
 
