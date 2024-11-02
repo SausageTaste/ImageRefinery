@@ -28,7 +28,7 @@ namespace sung {
 
         p.add_argument("-t", "--threshold")
             .help("Reduction threshold")
-            .default_value(1.0)
+            .default_value(0.9)
             .store_into(out.reduction_threshold_);
 
         p.add_argument("--webp")
