@@ -245,6 +245,10 @@ namespace sung {
 
         const auto new_path = sung::replace_ext(src_, sel->extension());
 
+        const auto status = fs::status(new_path);
+        const auto src_time = fs::last_write_time(src_);
+        fs::last_write_time(*sel, src_time);
+
         if (!fs::remove(src_))
             return sung::unexpected("Failed to remove old file");
 
