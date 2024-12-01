@@ -53,7 +53,7 @@ namespace {
     bool is_img_monochrome(const OIIO::ImageBuf& img) {
         auto roi = OIIO::get_roi(img.spec());
         roi.chend = std::min(3, roi.chend);  // only test RGB, not alpha
-        return OIIO::ImageBufAlgo::isMonochrome(img, 0.01f, roi);
+        return OIIO::ImageBufAlgo::isMonochrome(img, 0.075f, roi);
     }
 
 }  // namespace
