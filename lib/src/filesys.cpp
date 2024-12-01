@@ -88,21 +88,19 @@ namespace sung {
             return {};
 
         auto it = files_.begin();
-        auto prefix = *it;
+        auto prefix_str = it->u8string();
         for (++it; it != files_.end(); ++it) {
-            const auto& path = *it;
-            const auto& prefix_str = prefix.u8string();
-            const auto& path_str = path.u8string();
+            const auto& path_str = it->u8string();
             const auto len = std::min(prefix_str.size(), path_str.size());
-            size_t i = 0;
-            for (; i < len; ++i) {
-                if (prefix_str[i] != path_str[i])
+            for (size_t i = 0; i < len; ++i) {
+                if (prefix_str[i] != path_str[i]) {
+                    prefix_str = prefix_str.substr(0, i);
                     break;
+                }
             }
-            prefix = fs::path(prefix_str.substr(0, i));
         }
 
-        return ::get_deepest_folder(prefix);
+        return ::get_deepest_folder(fs::path(prefix_str));
     }
 
     bool FileList::is_valid_file(const fs::directory_entry& entry) const {
