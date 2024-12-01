@@ -93,6 +93,13 @@ namespace sung::oiio {
         this->resize_to_fit_into(1206, 2622);
     }
 
+    void ImageSize2D::resize_for_i16p_pages() {
+        if (width_ > height_)
+            this->resize_to_fit_into(1206 * 2, 2622);
+        else
+            this->resize_to_fit_into(1206, 2622);
+    }
+
     int ImageSize2D::width() const {
         const auto factor = *factors_.begin();
         if (factor < 1)

@@ -29,6 +29,7 @@ namespace sung::oiio {
 
         // iPhone 16 Pro
         void resize_for_i16p();
+        void resize_for_i16p_pages();
 
         int width() const;
         int height() const;
