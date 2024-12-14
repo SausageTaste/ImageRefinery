@@ -1,22 +1,36 @@
+import os
+
 from PIL import Image
 
 
 def main():
-    # Open the images
-    img1 = Image.open(r"C:\Users\woos8\Desktop\pc_dl_av_185b_upper1_a.png")
-    img2 = Image.open(r"C:\Users\woos8\Desktop\pc_dl_av_185b_upper1_o.png")
+    root_path = r"C:\Users\woos8\Desktop"
 
-    # Convert img2 to 'L' mode
-    img2 = img2.convert('L')
+    albedo_images = set()
+    opacity_images = set()
 
-    print(img1.mode)
-    print(img2.mode)
+    for x in os.listdir(root_path):
+        x_path = os.path.join(root_path, x)
+        if x.endswith("_a.png"):
+            albedo_images.add(x_path)
+        elif x.endswith("_o.png"):
+            opacity_images.add(x_path)
 
-    # Use img2 as the alpha channel for img1
-    img1.putalpha(img2)
+    for albedo_img_path in albedo_images:
+        opacity_img_path = albedo_img_path.rstrip("_a.png") + "_o.png"
+        if opacity_img_path not in opacity_images:
+            raise FileNotFoundError(f"Opacity image not found: {repr(opacity_img_path)}")
 
-    # Save the image
-    img1.save(r"C:\Users\woos8\Desktop\ao_merged.png")
+        albedo_img = Image.open(albedo_img_path)
+        opacity_img = Image.open(opacity_img_path)
+
+        opacity_img = opacity_img.convert('L')
+        albedo_img.putalpha(opacity_img)
+
+        # Save the image
+        output_path = albedo_img_path.rstrip("_a.png") + "_ao.png"
+        albedo_img.save(output_path)
+        print(f"Saved {output_path}")
 
 
 if __name__ == "__main__":
